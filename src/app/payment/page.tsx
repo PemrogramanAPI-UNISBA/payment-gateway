@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Product {
 	id: string;
@@ -15,6 +16,7 @@ export default function PaymentPage() {
 	const [customerEmail, setCustomerEmail] = useState<string>('');
 	const [productPrice, setProductPrice] = useState<number | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+	const router = useRouter();
 
 	useEffect(() => {
 		const fetchProducts = async () => {
@@ -65,6 +67,8 @@ export default function PaymentPage() {
 			}
 
 			alert('Payment successful!');
+			const data = await response.json();
+			router.push(data.data.redirect_url);
 			// Reset form setelah sukses
 			setSelectedProductId(null);
 			setCustomerName('');
