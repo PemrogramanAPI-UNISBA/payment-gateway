@@ -1,5 +1,8 @@
 'use client';
 
+import { GetProduct } from '@/services/view/product';
+import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 interface Product {
@@ -15,6 +18,12 @@ export default function PaymentPage() {
 	const [customerEmail, setCustomerEmail] = useState<string>('');
 	const [productPrice, setProductPrice] = useState<number | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+	const router = useRouter();
+
+	// [start] - experiment
+	const productQuery = useQuery({ queryKey: ['products'], queryFn: GetProduct.getAll });
+
+	// [end] - experiment
 
 	useEffect(() => {
 		const fetchProducts = async () => {
@@ -64,8 +73,13 @@ export default function PaymentPage() {
 				throw new Error('Failed to process payment');
 			}
 
-			alert('Payment successful!');
+			const data = await response.json();
+
+			console.log(data.data.redirect_url);
+			alert('success');
+			router.push(data.data.redirect_url);
 			// Reset form setelah sukses
+
 			setSelectedProductId(null);
 			setCustomerName('');
 			setCustomerEmail('');
