@@ -1,9 +1,10 @@
 'use client';
 
-import { GetProduct } from '@/services/view/product';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import { GetProduct } from '@/services/view/product';
+import { PostPayment } from '@/services/view/payment/post.product';
 
 interface Product {
 	id: string;
@@ -11,110 +12,108 @@ interface Product {
 	price: number;
 }
 
+interface PaymentData {
+	productId: string | null;
+	customerName: string;
+	customerEmail: string;
+	amount: number | null;
+}
+
 export default function PaymentPage() {
-	const [products, setProducts] = useState<Product[]>([]);
-	const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-	const [customerName, setCustomerName] = useState<string>('');
-	const [customerEmail, setCustomerEmail] = useState<string>('');
-	const [productPrice, setProductPrice] = useState<number | null>(null);
-	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 	const router = useRouter();
 
-	// [start] - experiment
-	const productQuery = useQuery({ queryKey: ['products'], queryFn: GetProduct.getAll });
+	const [formData, setFormData] = useState<Omit<PaymentData, 'amount'> & { amount?: number | null }>({
+		productId: null,
+		customerName: '',
+		customerEmail: '',
+		amount: null,
+	});
 
-	// [end] - experiment
+	const { data: products, isLoading: isLoadingProducts } = useQuery<{ data: Product[] }>({
+		queryKey: ['products'],
+		queryFn: GetProduct.getAll,
+	});
 
-	useEffect(() => {
-		const fetchProducts = async () => {
-			try {
-				const response = await fetch('/api/products');
-				const data = await response.json();
-				setProducts(data.data);
-			} catch (error) {
-				console.error('Error fetching products:', error);
-			}
-		};
-
-		fetchProducts();
-	}, []);
-
-	useEffect(() => {
-		if (selectedProductId) {
-			const selectedProduct = products.find((product) => product.id === selectedProductId);
-			setProductPrice(selectedProduct ? selectedProduct.price : null);
-		}
-
-		console.log(selectedProductId);
-	}, [selectedProductId, products]);
-
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setIsSubmitting(true);
-
-		const paymentData = {
-			productId: selectedProductId,
-			customerName,
-			customerEmail,
-			amount: productPrice,
-		};
-
-		console.log(paymentData);
-		try {
-			const response = await fetch('/api/payment', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(paymentData),
-			});
-
-			if (!response.ok) {
-				throw new Error('Failed to process payment');
-			}
-
-			const data = await response.json();
-
-			console.log(data.data.redirect_url);
-			alert('success');
+	const paymentMutation = useMutation({
+		mutationFn: PostPayment.createPayment,
+		onSuccess: (data) => {
+			alert('Pembayaran berhasil');
 			router.push(data.data.redirect_url);
-			// Reset form setelah sukses
 
-			setSelectedProductId(null);
-			setCustomerName('');
-			setCustomerEmail('');
-			setProductPrice(null);
-		} catch (error) {
-			console.error('Error submitting payment:', error);
-			alert('Payment failed. Please try again.');
-		} finally {
-			setIsSubmitting(false);
+			setFormData({
+				productId: null,
+				customerName: '',
+				customerEmail: '',
+				amount: null,
+			});
+		},
+		onError: (error) => {
+			console.error('Error pembayaran:', error);
+			alert('Pembayaran gagal. Silakan coba lagi.');
+		},
+	});
+
+	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+		const { id, value } = e.target;
+
+		if (id === 'product') {
+			const selectedProduct = products?.data?.find((p) => p.id === value);
+			setFormData((prev) => ({
+				...prev,
+				productId: value,
+				amount: selectedProduct?.price || null,
+			}));
+			return;
 		}
+
+		setFormData((prev) => ({
+			...prev,
+			[id]: value,
+		}));
 	};
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+
+		if (!formData.productId || !formData.customerName || !formData.customerEmail) {
+			alert('Silakan lengkapi semua field');
+			return;
+		}
+
+		paymentMutation.mutate({
+			productId: formData.productId!,
+			customerName: formData.customerName,
+			customerEmail: formData.customerEmail,
+			amount: formData.amount!,
+		});
+	};
+
+	if (isLoadingProducts) {
+		return <div>Memuat produk...</div>;
+	}
 
 	return (
 		<div className='container mx-auto p-6'>
-			<h1 className='text-2xl font-bold mb-4'>Payment Page</h1>
+			<h1 className='text-2xl font-bold mb-4'>Halaman Pembayaran</h1>
 
-			{/* Form pembayaran */}
 			<form
 				onSubmit={handleSubmit}
 				className='p-6 rounded-md shadow-md'
 			>
-				<h2 className='text-xl font-semibold mb-4'>Payment Form</h2>
+				<h2 className='text-xl font-semibold mb-4'>Form Pembayaran</h2>
 
-				{/* Pilih produk */}
+				{/* Select Produk */}
 				<div className='mb-4'>
 					<label
 						htmlFor='product'
 						className='block font-medium mb-2'
 					>
-						Select Product
+						Pilih Produk
 					</label>
 					<select
 						id='product'
-						value={selectedProductId || ''}
-						onChange={(e) => setSelectedProductId(e.target.value)}
+						value={formData.productId || ''}
+						onChange={handleInputChange}
 						className='w-full p-2 border rounded text-slate-800'
 						required
 					>
@@ -122,9 +121,9 @@ export default function PaymentPage() {
 							value=''
 							disabled
 						>
-							Select a product
+							Pilih Produk
 						</option>
-						{products.map((product) => (
+						{products?.data?.map((product) => (
 							<option
 								key={product.id}
 								value={product.id}
@@ -135,67 +134,67 @@ export default function PaymentPage() {
 					</select>
 				</div>
 
-				{/* Input nama customer */}
+				{/* Input Nama */}
 				<div className='mb-4'>
 					<label
 						htmlFor='customerName'
 						className='block font-medium mb-2'
 					>
-						Customer Name
+						Nama Pelanggan
 					</label>
 					<input
 						id='customerName'
 						type='text'
-						value={customerName}
-						onChange={(e) => setCustomerName(e.target.value)}
-						className='w-full p-2 border rounded  text-slate-800'
-						placeholder='Enter customer name'
+						value={formData.customerName}
+						onChange={handleInputChange}
+						className='w-full p-2 border rounded text-slate-800'
+						placeholder='Masukkan nama pelanggan'
 						required
 					/>
 				</div>
 
-				{/* Input email customer */}
+				{/* Input Email */}
 				<div className='mb-4'>
 					<label
 						htmlFor='customerEmail'
 						className='block font-medium mb-2'
 					>
-						Customer Email
+						Email Pelanggan
 					</label>
 					<input
 						id='customerEmail'
 						type='email'
-						value={customerEmail}
-						onChange={(e) => setCustomerEmail(e.target.value)}
-						className='w-full p-2 border rounded  text-slate-800'
-						placeholder='Enter customer email'
+						value={formData.customerEmail}
+						onChange={handleInputChange}
+						className='w-full p-2 border rounded text-slate-800'
+						placeholder='Masukkan email pelanggan'
 						required
 					/>
 				</div>
 
-				{/* Input harga produk (otomatis terisi) */}
+				{/* Harga Produk */}
 				<div className='mb-4'>
 					<label
 						htmlFor='productPrice'
 						className='block font-medium mb-2'
 					>
-						Product Price (Rp)
+						Harga Produk (Rp)
 					</label>
 					<input
 						id='productPrice'
 						type='text'
-						value={productPrice !== null ? productPrice.toLocaleString() : ''}
+						value={formData.amount !== null ? formData.amount!.toLocaleString() : ''}
 						readOnly
-						className='w-full p-2 border rounded bg-gray-100  text-slate-800'
+						className='w-full p-2 border rounded bg-gray-100 text-slate-800'
 					/>
 				</div>
 
 				<button
 					type='submit'
-					disabled={isSubmitting}
+					disabled={paymentMutation.isPending}
 					className='bg-blue-500 text-white p-2 rounded w-full'
 				>
-					{isSubmitting ? 'Processing...' : 'Submit Payment'}
+					{paymentMutation.isPending ? 'Memproses...' : 'Bayar Sekarang'}
 				</button>
 			</form>
 		</div>
