@@ -34,4 +34,41 @@ export class PaymentController {
 			return errorHandler(error);
 		}
 	}
+
+	static async WEBHOOK(request: Request) {
+		try {
+			console.log('webhook');
+			//! dokumentasi midtrans: https://docs.midtrans.com/docs/https-notification-webhooks
+			const data = await request.json(); // data dikirim otomatis oleh midtrans
+
+			/*
+			TODO: set notifikasi midtrans
+			https://dashboard.sandbox.midtrans.com/settings/payment/notification
+			*/
+
+			const realtimeUpdate = await PaymentService.WEBHOOK(data);
+
+			return ApiResponseBuilder.success(realtimeUpdate, {
+				message: 'OK',
+			});
+		} catch (error) {
+			return errorHandler(error);
+		}
+	}
+
+	static async CANCEL(request: Request) {
+		try {
+			console.log('cancel');
+			//! dokumentasi midtrans: https://docs.midtrans.com/reference/cancel-transaction
+			const data = await request.json(); // kirim data orderId dari body
+
+			const cancelTransaction = await PaymentService.CANCEL(data.orderId);
+
+			return ApiResponseBuilder.success(cancelTransaction, {
+				message: 'transaction canceled successfully',
+			});
+		} catch (error) {
+			return errorHandler(error);
+		}
+	}
 }
