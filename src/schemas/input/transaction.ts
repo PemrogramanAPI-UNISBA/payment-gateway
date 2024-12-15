@@ -6,3 +6,5 @@ export const PaymentSchema = z.object({
 	customerName: z.string(),
 	customerEmail: z.string().email(),
 });
+
+export type PaymentSchemaType = z.infer<typeof PaymentSchema>;

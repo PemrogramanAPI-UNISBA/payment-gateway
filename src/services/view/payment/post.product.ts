@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import { PaymentRequest } from '@/types/payment';
+import { CustomError } from '@/utils/error';
 
 export class PostPayment {
 	static async createPayment(data: PaymentRequest) {
@@ -13,15 +14,12 @@ export class PostPayment {
 			return response.data;
 		} catch (error) {
 			if (axios.isAxiosError(error)) {
+				console.log(error.response);
 				if (error.response) {
-					throw new Error(error.response.data.message || 'Gagal memproses pembayaran');
-				} else if (error.request) {
-					throw new Error('Tidak ada respon dari server');
-				} else {
-					throw new Error('Gagal membuat request pembayaran');
+					throw new CustomError(error.response.data.message || 'Gagal memproses pembayaran', error.response.status || 500);
 				}
+				throw error;
 			}
-			throw error;
 		}
 	}
 }

@@ -12,7 +12,7 @@ export class PaymentController {
 			const query = searchParams.get('query');
 			console.log(query);
 
-			return ApiResponseBuilder.created(query, {
+			return ApiResponseBuilder.success(query, {
 				message: 'transaction retrieved successfully',
 			});
 		} catch (error) {

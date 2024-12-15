@@ -7,7 +7,7 @@ export class ProductController {
 		try {
 			const products = await ProductService.GET();
 
-			return ApiResponseBuilder.created(products, {
+			return ApiResponseBuilder.success(products, {
 				message: 'products retrieved successfully',
 			});
 		} catch (error) {
