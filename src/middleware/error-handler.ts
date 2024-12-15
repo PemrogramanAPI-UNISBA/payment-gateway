@@ -15,7 +15,7 @@ export function errorHandler(error: unknown) {
 	}
 
 	if (error instanceof CustomError) {
-		return ApiResponseBuilder.error(error.message, error.statusCode, error.stack);
+		return ApiResponseBuilder.error(error.message, error.statusCode);
 	}
 
 	if (error instanceof z.ZodError) {

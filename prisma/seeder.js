@@ -15,13 +15,6 @@ async function main() {
 	await prisma.product.createMany({
 		data: products,
 	});
-
-	const customers = [{ name: 'John Doe' }, { name: 'Jane Smith' }, { name: 'Alice Johnson' }, { name: 'Bob Brown' }, { name: 'Charlie Davis' }];
-
-	console.log('Seeding Customers...');
-	await prisma.customer.createMany({
-		data: customers,
-	});
 }
 
 main()

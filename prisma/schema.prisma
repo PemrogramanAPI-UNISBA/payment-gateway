@@ -24,13 +24,15 @@ model Product {
 }
 
 model Transaction {
-  id        String     @id @default(cuid())
+  id        String   @id @default(cuid())
   amount    Float
-  orderId   String     @unique @default(cuid()) @map("order_id")
-  status    String     @default("pending")
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-  Customer  Customer[]
+  orderId   String   @unique @default(cuid()) @map("order_id")
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  snapToken String?
+
+  Customer Customer[]
 
   @@map("transactions")
 }
