@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { GetProduct } from '@/services/view/product';
 import { PostPayment } from '@/services/view/payment';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PaymentSchema, PaymentSchemaType } from '@/schemas/input/transaction';
+import { PaymentSchema, PaymentSchemaType } from '@/validation/transaction';
 import { SubmitHandler, useForm, useWatch } from 'react-hook-form';
 
 interface Product {

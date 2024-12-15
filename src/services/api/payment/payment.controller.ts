@@ -1,4 +1,4 @@
-import { PaymentSchema } from '@/schemas/input/transaction';
+import { PaymentSchema } from '@/validation/transaction';
 import { ApiResponseBuilder } from '@/utils/response';
 import { validateSchema } from '@/utils/validation';
 import { NextRequest } from 'next/server';
