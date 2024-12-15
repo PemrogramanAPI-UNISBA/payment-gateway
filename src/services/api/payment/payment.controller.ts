@@ -1,4 +1,4 @@
-import { PaymentSchema } from '@/schemas/input/transaction';
+import { PaymentSchema } from '@/validation/transaction';
 import { ApiResponseBuilder } from '@/utils/response';
 import { validateSchema } from '@/utils/validation';
 import { NextRequest } from 'next/server';
@@ -12,7 +12,7 @@ export class PaymentController {
 			const query = searchParams.get('query');
 			console.log(query);
 
-			return ApiResponseBuilder.created(query, {
+			return ApiResponseBuilder.success(query, {
 				message: 'transaction retrieved successfully',
 			});
 		} catch (error) {
